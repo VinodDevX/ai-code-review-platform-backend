@@ -1,19 +1,17 @@
-import { success } from "zod";
-import prisma from "../../config/database";
-import { hashPassword } from "../../utils/password";
+import prisma from "../../config/database.js";
+import { hashPassword } from "../../utils/password.js";
 
-export const register = async (req, res) => {
-  const { name, email, password } = req.body;
-
+export const register = async ({ name, email, password }) => {
   const existingUser = await prisma.user.findUnique({
     where: {
-      email
+      email,
     },
   });
 
-  if (!existingUser) {
+  if (existingUser) {
     throw new Error("Email already registered");
   }
+
   const passwordHash = await hashPassword(password);
 
   const user = await prisma.user.create({
