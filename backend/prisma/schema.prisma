@@ -21,6 +21,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  githubAccessToken  String
+  tokenType          String?
   refreshTokens      RefreshToken[]
   passwordResets     PasswordResetToken[]
   emailVerifications EmailVerificationToken[]
@@ -78,8 +80,14 @@ model EmailVerificationToken {
 
 model Repository {
   id          String  @id @default(uuid())
+  githubRepoId String
+
   name        String
   description String?
+  defaultBranch String?
+  fullName       String
+  htmlUrl        String
+  private        Boolean
 
   ownerId String
   owner   User   @relation("RepositoryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
