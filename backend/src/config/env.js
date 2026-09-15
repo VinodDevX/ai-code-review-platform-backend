@@ -17,6 +17,8 @@ const env = {
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
   githubCallbackUrl: process.env.GITHUB_CALLBACK_URL,
 
+  openAIKey: process.env.OPENAI_API_KEY,
+
   nodeEnv: process.env.NODE_ENV || "development",
 };
 

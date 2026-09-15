@@ -1,14 +1,9 @@
 const { frontendUrl } = require("../../config/env");
 const { getCurrentUser } = require("../auth/auth.service");
-const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, generateLoginUrl } = require("./github.service");
+const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, generateLoginUrl, startCodeReview } = require("./github.service");
 const crypto = require('crypto')
-const { Queue } = require('bullmq');
-const { LLM_PROCESSING } = require('./github.constants');
-const redisConnection = require('../../utils/redis');
-
-const queue = new Queue(LLM_PROCESSING, {
-    connection: redisConnection
-});
+const { REVIEW_CODE } = require('./github.constants');
+const { queue } = require('../../utils/worker')
 
 const githubLogin = (req, res) => {
     const state = crypto.randomBytes(32).toString("hex");
@@ -50,7 +45,7 @@ const githubCallback = async (req, res, next) => {
             access_token,
             token_type,
             scope
-        } = tokenResponse.data;        
+        } = tokenResponse.data;
 
         console.log(access_token)
 
@@ -121,9 +116,16 @@ const getRepos = async (req, res, next) => {
     }
 };
 
-const reviewCode = (req, res, next) => {
+const reviewCode = async (req, res, next) => {
     try {
-        queue.add('cars', { color: 'blue' });
+        const {githubRepoId} = req.body;
+
+        await startCodeReview(githubRepoId)
+        await queue.add(REVIEW_CODE, { code: 'console.log("HEllo")' });
+        res.json({
+            success: true,
+            data: "Repository is under review"
+        });
     } catch (error) {
         next(error)
     }

@@ -1,6 +1,7 @@
 const axios = require("axios");
 const prisma = require("../../config/database");
 const { githubClientID, githubCallbackUrl, githubClientSecret } = require("../../config/env");
+const { STATUS_ENUM } = require("./github.constants");
 
 const githubApi = axios.create({
     baseURL: "https://api.github.com",
@@ -17,20 +18,6 @@ const generateLoginUrl = (state) => {
         scope: "read:user user:email repo",
         state
     });
-}
-
-const fetchGithubRepos = async (githubAccessToken) => {
-    const response = await fetch(
-        "https://api.github.com/user/repos?per_page=100",
-        {
-            headers: {
-                Authorization: `Bearer ${githubAccessToken}`,
-                Accept: "application/vnd.github+json",
-            },
-        }
-    );
-
-    const repos = await response.json();
 }
 
 const saveReposToDB = async () => {
@@ -128,10 +115,24 @@ const getAccessTokenFromCode = async (code) => {
     }
 }
 
+const startCodeReview = async (githubRepoId) => {
+    try {
+        await prisma.codeReview.create({
+            data: {
+                status: STATUS_ENUM.PENDING,
+                githubRepoId: githubRepoId
+            }
+        })
+    } catch (error) {
+        throw new Error(error.message)
+    }
+}
+
 module.exports = {
     generateLoginUrl,
     getGithubUser,
     getGithubRepos,
     linkGithubWithUser,
-    getAccessTokenFromCode
+    getAccessTokenFromCode,
+    startCodeReview
 };

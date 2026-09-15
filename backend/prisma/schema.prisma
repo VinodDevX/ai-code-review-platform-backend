@@ -95,3 +95,21 @@ model Repository {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model CodeReview {
+  id          String  @id @default(uuid())
+  githubRepoId String
+
+  findings String
+  status       CodeReviewStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum CodeReviewStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
