@@ -14,6 +14,16 @@ const generateAccessToken = (userId) => {
   );
 };
 
+const encryptAccessToken = (token) => {
+  return jwt.sign(
+    {
+      token,
+      type: "access",
+    },
+    env.jwtAccessSecret
+  );
+};
+
 const generateRefreshToken = (userId) => {
   return jwt.sign(
     {
@@ -37,6 +47,7 @@ const verifyRefreshToken = (token) => {
 
 module.exports = {
   generateAccessToken,
+  encryptAccessToken,
   generateRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,

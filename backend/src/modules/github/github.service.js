@@ -79,37 +79,73 @@ const getGithubRepos = async (accessToken, page = 1, perPage = 30) => {
     return response.data;
 };
 
-const linkGithubWithUser = async (githubId, data) => {
-    await prisma.user.findOneAndUpdate(
-        {
-            githubId: githubId
+const linkGithubWithUser = async (data) => {
+    const conditions = [];
+
+    if (data.email) {
+        conditions.push({ email: data.email });
+    }
+
+    if (data.githubId) {
+        conditions.push({ githubId: data.githubId });
+    }
+    const existingUser = await prisma.user.findFirst({
+        where: {
+            OR: conditions
         },
-        data,
-        {
-            upsert: true,
-            new: true
-        }
-    );
+    });
+
+    if (existingUser) {
+        return await prisma.user.update(
+            {
+                githubId: data.githubId
+            },
+            {
+                name: existingUser.name || data.name,
+                email: existingUser.email || data.email,
+                isEmailVerified: true,
+                githubAccessToken: data.access_token,
+                tokenType: data.token_type
+            },
+            {
+                upsert: true,
+                new: true
+            }
+        );
+    } else {
+        return await prisma.user.create(
+            {
+                data: {
+                    name: data.name || data.login,
+                    email: data.email,
+                    isEmailVerified: true,
+                    githubAccessToken: data.access_token,
+                    tokenType: data.token_type,
+                    githubId: data.githubId
+                }
+            }
+        );
+    }
 }
 
 const getAccessTokenFromCode = async (code) => {
     try {
-         const tokenResponse = await axios.post(
-        "https://github.com/login/oauth/access_token",
-        {
-            client_id: githubClientID,
-            client_secret: githubClientSecret,
-            code,
-            redirect_uri: githubCallbackUrl
-        },
-        {
-            headers: {
-                Accept: "application/json"
+        const tokenResponse = await axios.post(
+            "https://github.com/login/oauth/access_token",
+            {
+                client_id: githubClientID,
+                client_secret: githubClientSecret,
+                code,
+                redirect_uri: githubCallbackUrl
+            },
+            {
+                headers: {
+                    Accept: "application/json"
+                }
             }
-        }
-    );
+        );
 
-    return tokenResponse   
+        return tokenResponse
     } catch (error) {
         throw new Error(error.message)
     }

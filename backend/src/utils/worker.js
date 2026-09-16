@@ -6,7 +6,7 @@ const redisConnection = require('./redis');
 const { ChatOpenAI, tools } = require("@langchain/openai");
 const { openAIKey } = require("../config/env");
 
-const connection = new IORedis({ host: 'localhost', port: 6379, maxRetriesPerRequest: null });
+const connection = new IORedis({ host: 'redis', port: 6379, maxRetriesPerRequest: null });
 
 const queue = new Queue(LLM_PROCESSING, {
     connection: redisConnection

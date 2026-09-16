@@ -22,6 +22,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   githubAccessToken  String
+  githubId           Int?  @unique
   tokenType          String?
   refreshTokens      RefreshToken[]
   passwordResets     PasswordResetToken[]

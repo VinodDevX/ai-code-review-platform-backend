@@ -3,7 +3,8 @@ const { getCurrentUser } = require("../auth/auth.service");
 const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, generateLoginUrl, startCodeReview } = require("./github.service");
 const crypto = require('crypto')
 const { REVIEW_CODE } = require('./github.constants');
-const { queue } = require('../../utils/worker')
+const { queue } = require('../../utils/worker');
+const { encryptAccessToken } = require("../../utils/jwt");
 
 const githubLogin = (req, res) => {
     const state = crypto.randomBytes(32).toString("hex");
@@ -47,8 +48,6 @@ const githubCallback = async (req, res, next) => {
             scope
         } = tokenResponse.data;
 
-        console.log(access_token)
-
         if (!access_token) {
             return res.status(401).json({
                 message: "Failed to obtain GitHub access token"
@@ -57,18 +56,20 @@ const githubCallback = async (req, res, next) => {
 
         // Fetch GitHub profile
         const githubUserResponse = await getGithubUser(access_token)
-
-        const githubUser = githubUserResponse.data;
-
+        
         // Continue with DB logic here
         // Find/create your application user
         // Store GitHub account information
         // Store encrypted access token
-        await linkGithubWithUser(githubUser.id, {
-            githubId: githubUser.id,
-            githubUsername: githubUser.login,
-            githubAvatar: githubUser.avatar_url,
-            githubAccessToken: encrypt(access_token)
+        await linkGithubWithUser({
+            githubId: githubUserResponse.id,
+            name: githubUserResponse.name,
+            login: githubUserResponse.login,
+            access_token,
+            token_type,
+            email: githubUserResponse.email,
+            githubAvatar: githubUserResponse.avatar_url,
+            githubAccessToken: encryptAccessToken(access_token)
         })
 
         return res.redirect(
