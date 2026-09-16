@@ -33,12 +33,12 @@ const register = async ({ name, email, password }) => {
 };
 
 const generateLoginUrl = (state) => {
-    return new URLSearchParams({
-        client_id: githubClientID,
-        redirect_uri: githubCallbackUrl,
-        scope: "read:user user:email repo",
-        state
-    });
+  return new URLSearchParams({
+    client_id: githubClientID,
+    redirect_uri: githubCallbackUrl,
+    scope: "read:user user:email repo",
+    state
+  });
 }
 
 const login = async ({ email, password }) => {
@@ -109,6 +109,7 @@ const getCurrentUser = async (userId) => {
       createdAt: true,
       updatedAt: true,
     },
+    include: { oauthAccounts: true }
   });
 };
 
