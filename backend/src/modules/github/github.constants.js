@@ -7,6 +7,10 @@ const STATUS_ENUM = {
     FAILED: "FAILED"
 }
 
+const AUTH_PROVIDERS = {
+    GITHUB: "GITHUB"
+}
+
 // Comment prefix used to identify AI review comments
 const AI_REVIEW_COMMENT_PREFIX = "AI review done up to commit: ";
 
@@ -27,6 +31,7 @@ const MAX_CACHE_ENTRIES = 1000;
 
 module.exports = {
     LLM_PROCESSING,
+    AUTH_PROVIDERS,
     REVIEW_CODE,
     STATUS_ENUM,
     AI_REVIEW_COMMENT_PREFIX,

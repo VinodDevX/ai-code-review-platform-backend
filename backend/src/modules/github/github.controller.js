@@ -1,23 +1,10 @@
 const { frontendUrl } = require("../../config/env");
 const { getCurrentUser } = require("../auth/auth.service");
-const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, generateLoginUrl, startCodeReview } = require("./github.service");
-const crypto = require('crypto')
+const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, startCodeReview } = require("./github.service");
 const { REVIEW_CODE } = require('./github.constants');
 const { queue } = require('../../utils/worker');
 const { encryptAccessToken } = require("../../utils/jwt");
 
-const githubLogin = (req, res) => {
-    const state = crypto.randomBytes(32).toString("hex");
-
-    // Store state temporarily in session/Redis.
-    req.session.githubOAuthState = state;
-
-    const params = generateLoginUrl(state)
-
-    res.redirect(
-        `https://github.com/login/oauth/authorize?${params.toString()}`
-    );
-};
 
 const githubCallback = async (req, res, next) => {
     try {
@@ -133,7 +120,6 @@ const reviewCode = async (req, res, next) => {
 }
 
 module.exports = {
-    githubLogin,
     githubCallback,
     getRepos,
     reviewCode

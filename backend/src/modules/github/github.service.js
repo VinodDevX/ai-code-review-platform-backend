@@ -1,7 +1,7 @@
 const axios = require("axios");
 const prisma = require("../../config/database");
 const { githubClientID, githubCallbackUrl, githubClientSecret } = require("../../config/env");
-const { STATUS_ENUM } = require("./github.constants");
+const { STATUS_ENUM, AUTH_PROVIDERS } = require("./github.constants");
 
 const githubApi = axios.create({
     baseURL: "https://api.github.com",
@@ -10,15 +10,6 @@ const githubApi = axios.create({
     },
     timeout: 10000
 });
-
-const generateLoginUrl = (state) => {
-    return new URLSearchParams({
-        client_id: githubClientID,
-        redirect_uri: githubCallbackUrl,
-        scope: "read:user user:email repo",
-        state
-    });
-}
 
 const saveReposToDB = async () => {
     for (const repo of repos) {
@@ -80,51 +71,89 @@ const getGithubRepos = async (accessToken, page = 1, perPage = 30) => {
 };
 
 const linkGithubWithUser = async (data) => {
-    const conditions = [];
+    const condition = [
+        {
+            oauthAccounts: {
+                some: {
+                    provider: "GITHUB",
+                    providerAccountId: data.githubId,
+                },
+            },
+        }
+    ]
 
     if (data.email) {
-        conditions.push({ email: data.email });
+        condition.push({ email: data.email })
     }
 
-    if (data.githubId) {
-        conditions.push({ githubId: data.githubId });
-    }
     const existingUser = await prisma.user.findFirst({
         where: {
-            OR: conditions
+            OR: condition,
+        },
+        include: {
+            oauthAccounts: true,
         },
     });
 
     if (existingUser) {
+        await prisma.oAuthAccount.upsert({
+            create: {
+                userId: existingUser.id,
+                provider: AUTH_PROVIDERS['GITHUB'],
+                providerAccountId: data.githubId,
+                accessToken: data.githubAccessToken,
+                refreshToken: data.refresh_token,
+                tokenType: data.token_type,
+            },
+            update: {
+                userId: existingUser.id,
+                provider: AUTH_PROVIDERS['GITHUB'],
+                providerAccountId: data.githubId,
+                accessToken: data.githubAccessToken,
+                refreshToken: data.refresh_token,
+                tokenType: data.token_type,
+            },
+            where: {
+                provider_providerAccountId: {
+                    provider: "GITHUB",
+                    providerAccountId: 327384157,
+                },
+            }
+        })
         return await prisma.user.update(
             {
-                githubId: data.githubId
-            },
-            {
-                name: existingUser.name || data.name,
-                email: existingUser.email || data.email,
-                isEmailVerified: true,
-                githubAccessToken: data.access_token,
-                tokenType: data.token_type
-            },
-            {
-                upsert: true,
-                new: true
+                where: {
+                    id: existingUser.id
+
+                },
+                data: {
+                    name: existingUser.name || data.name,
+                    email: existingUser.email || data.email,
+                    isEmailVerified: true,
+                }
             }
         );
     } else {
-        return await prisma.user.create(
+        const user = await prisma.user.create(
             {
                 data: {
                     name: data.name || data.login,
                     email: data.email,
                     isEmailVerified: true,
-                    githubAccessToken: data.access_token,
-                    tokenType: data.token_type,
-                    githubId: data.githubId
                 }
             }
         );
+
+        await prisma.oAuthAccount.create({
+            data: {
+                userId: user.id,
+                provider: AUTH_PROVIDERS['GITHUB'],
+                providerAccountId: data.githubId,
+                accessToken: data.githubAccessToken,
+                refreshToken: data.refresh_token,
+                tokenType: data.token_type,
+            }
+        })
     }
 }
 
@@ -165,7 +194,6 @@ const startCodeReview = async (githubRepoId) => {
 }
 
 module.exports = {
-    generateLoginUrl,
     getGithubUser,
     getGithubRepos,
     linkGithubWithUser,

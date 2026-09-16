@@ -9,8 +9,8 @@ datasource db {
 model User {
   id           String       @id @default(uuid())
   name         String
-  email        String       @unique
-  passwordHash String       @map("password_hash")
+  email        String?       @unique
+  passwordHash String?      @map("password_hash")
   repositories Repository[] @relation("RepositoryOwner")
 
   isEmailVerified Boolean @default(false) @map("is_email_verified")
@@ -21,14 +21,43 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  githubAccessToken  String
-  githubId           Int?  @unique
-  tokenType          String?
   refreshTokens      RefreshToken[]
   passwordResets     PasswordResetToken[]
   emailVerifications EmailVerificationToken[]
+  oauthAccounts      OAuthAccount[]
 
   @@map("users")
+}
+
+model OAuthAccount {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+
+  provider OAuthProvider
+
+  providerAccountId Int @map("provider_account_id")
+
+  accessToken String? @map("access_token")
+
+  refreshToken String? @map("refresh_token")
+
+  accessTokenExpiresAt DateTime? @map("access_token_expires_at")
+
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+
+  tokenType String? @map("token_type")
+
+  scope String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
 model RefreshToken {
@@ -80,15 +109,15 @@ model EmailVerificationToken {
 }
 
 model Repository {
-  id          String  @id @default(uuid())
+  id           String @id @default(uuid())
   githubRepoId String
 
-  name        String
-  description String?
+  name          String
+  description   String?
   defaultBranch String?
-  fullName       String
-  htmlUrl        String
-  private        Boolean
+  fullName      String
+  htmlUrl       String
+  private       Boolean
 
   ownerId String
   owner   User   @relation("RepositoryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -98,11 +127,11 @@ model Repository {
 }
 
 model CodeReview {
-  id          String  @id @default(uuid())
+  id           String @id @default(uuid())
   githubRepoId String
 
   findings String
-  status       CodeReviewStatus
+  status   CodeReviewStatus
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,4 +142,8 @@ enum CodeReviewStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum OAuthProvider {
+  GITHUB
 }

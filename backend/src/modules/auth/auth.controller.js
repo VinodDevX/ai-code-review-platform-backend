@@ -1,4 +1,4 @@
-const { success } = require("zod");
+const crypto = require('crypto')
 const authService = require("./auth.service");
 
 const { registerSchema, loginSchema } = require("./auth.validation");
@@ -19,6 +19,18 @@ const register = async (req, res, next) => {
   }
 };
 
+const loginWithGithub = async (req, res, next) => {
+    const state = crypto.randomBytes(32).toString("hex");
+
+    // Store state temporarily in session/Redis.
+    req.session.githubOAuthState = state;
+
+    const params = authService.generateLoginUrl(state)
+
+    res.redirect(
+        `https://github.com/login/oauth/authorize?${params.toString()}`
+    );
+};
 
 const login = async (req, res, next) => {
   try {
@@ -114,6 +126,7 @@ const logout = async (req, res, next) => {
 
 module.exports = {
   register,
+  loginWithGithub,
   login,
   me,
   logout,

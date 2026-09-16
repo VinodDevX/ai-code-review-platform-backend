@@ -1,4 +1,5 @@
 const prisma = require("../../config/database");
+const { githubClientID, githubCallbackUrl } = require("../../config/env");
 const { generateAccessToken, generateRefreshToken } = require("../../utils/jwt");
 const { comparePassword, hashPassword } = require("../../utils/password");
 const { hashToken } = require("../../utils/token");
@@ -31,6 +32,15 @@ const register = async ({ name, email, password }) => {
   };
 };
 
+const generateLoginUrl = (state) => {
+    return new URLSearchParams({
+        client_id: githubClientID,
+        redirect_uri: githubCallbackUrl,
+        scope: "read:user user:email repo",
+        state
+    });
+}
+
 const login = async ({ email, password }) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -52,7 +62,7 @@ const login = async ({ email, password }) => {
     throw new Error("Invaliid password and email");
   }
 
-  const accessToken = await generateAccessToken(user.id);
+  const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
 
   await prisma.refreshToken.create({
@@ -148,6 +158,7 @@ const logout = async (refreshToken) => {
 module.exports = {
   register,
   login,
+  generateLoginUrl,
   getCurrentUser,
   refreshAccessToken,
   logout

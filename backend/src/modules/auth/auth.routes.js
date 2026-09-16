@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post("/register", authController.register);
 
-router.post("/login-with-github", authController.register);
+router.get("/login-with-github", authController.loginWithGithub);
 
 router.post("/login", authController.login);
 
