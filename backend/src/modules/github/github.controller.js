@@ -27,13 +27,10 @@ const githubCallback = async (req, res, next) => {
         delete req.session.githubOAuthState;
 
         // Exchange authorization code for access token
-        const tokenResponse = await getAccessTokenFromCode(code);
-
         const {
             access_token,
             token_type,
-            scope
-        } = tokenResponse.data;
+        } = await getAccessTokenFromCode(code);
 
         if (!access_token) {
             return res.status(401).json({
@@ -43,7 +40,7 @@ const githubCallback = async (req, res, next) => {
 
         // Fetch GitHub profile
         const githubUserResponse = await getGithubUser(access_token)
-        
+
         // Continue with DB logic here
         // Find/create your application user
         // Store GitHub account information
@@ -70,17 +67,15 @@ const githubCallback = async (req, res, next) => {
 
 const getRepos = async (req, res, next) => {
     try {
-        const user = await getCurrentUser(req.user.id);
+        const { user, githubAccount } = await getCurrentUser(req.user.id);
 
-        if (!user || !user.githubAccessTokenEncrypted) {
+        if (!user || !githubAccount) {
             return res.status(401).json({
                 message: "GitHub account not connected"
             });
         }
 
-        const accessToken = decrypt(
-            user.githubAccessTokenEncrypted
-        );
+        const accessToken = githubAccount.accessToken;
 
         const page = Number(req.query.page) || 1;
         const perPage = Math.min(
@@ -106,10 +101,12 @@ const getRepos = async (req, res, next) => {
 
 const reviewCode = async (req, res, next) => {
     try {
-        const {githubRepoId} = req.body;
+        const { githubRepoId, branch, owner, userId } = req.body;
 
-        await startCodeReview(githubRepoId)
-        await queue.add(REVIEW_CODE, { code: 'console.log("HEllo")' });
+        const codeReviewData = await startCodeReview(githubRepoId);
+
+        await queue.add(REVIEW_CODE, { branch, repo, owner, reviewId: codeReviewData.id, userId });
+
         res.json({
             success: true,
             data: "Repository is under review"

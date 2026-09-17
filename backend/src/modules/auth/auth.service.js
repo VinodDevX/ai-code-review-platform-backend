@@ -3,6 +3,7 @@ const { githubClientID, githubCallbackUrl } = require("../../config/env");
 const { generateAccessToken, generateRefreshToken } = require("../../utils/jwt");
 const { comparePassword, hashPassword } = require("../../utils/password");
 const { hashToken } = require("../../utils/token");
+const { AUTH_PROVIDERS } = require("../github/github.constants");
 
 const register = async ({ name, email, password }) => {
   const existingUser = await prisma.user.findUnique({
@@ -96,7 +97,7 @@ const login = async ({ email, password }) => {
 
 
 const getCurrentUser = async (userId) => {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       id: userId,
     },
@@ -111,6 +112,10 @@ const getCurrentUser = async (userId) => {
     },
     include: { oauthAccounts: true }
   });
+
+  const githubAccount = user.oauthAccounts.find(a => a.provider === AUTH_PROVIDERS['GITHUB'])
+
+  return { githubAccount, user }
 };
 
 

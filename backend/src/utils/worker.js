@@ -3,8 +3,8 @@ const { Queue, Worker } = require('bullmq')
 const IORedis = require('ioredis')
 const { REVIEW_CODE, LLM_PROCESSING } = require('../modules/github/github.constants')
 const redisConnection = require('./redis');
-const { ChatOpenAI, tools } = require("@langchain/openai");
-const { openAIKey } = require("../config/env");
+const prisma = require('../config/database');
+const { loadRepository, performCodeReview } = require('../modules/github/github.service');
 
 const connection = new IORedis({ host: 'redis', port: 6379, maxRetriesPerRequest: null });
 
@@ -12,18 +12,90 @@ const queue = new Queue(LLM_PROCESSING, {
     connection: redisConnection
 });
 
-const model = new ChatOpenAI({ model: "gpt-5.6-sol", apiKey: openAIKey });
-
-
 const worker = new Worker(LLM_PROCESSING, async (job) => {
     console.log(`Processing job ${job.id}: ${job.name}`);
 
     if (job.name === REVIEW_CODE) {
-        const response = await model.invoke(`Perform a detailed code review on the following code. Make sure to point out vulnerablities, suggestions, coding practices, folder structer and other important aspects to maintain the high quality code. Code: - ${job.code}`, {
-            tools: [tools.codeInterpreter()]
-        });
+        const { branch, repo, owner, reviewId, userId } = job;
 
+        try {
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: userId
+                },
+                include: {
+                    oauthAccounts: true
+                }
+            });
 
+            if (!user) {
+                throw new Error(`User ${userId} not found`);
+            }
+
+            const githubAccount = user.oauthAccounts.find(account => account.provider === "github");
+
+            if (!githubAccount) {
+                throw new Error(
+                    "GitHub account not connected"
+                );
+            }
+
+            const accessToken = githubAccount.accessToken;
+
+            console.log(`Fetching ${owner}/${repo}@${branch}`);
+
+            const repository =
+                await loadRepository({
+                    accessToken,
+                    owner,
+                    repo,
+                    branch
+                });
+
+            console.log(
+                `Fetched ${repository.files.length} files`
+            );
+
+            const review =
+                await performCodeReview(
+                    repository
+                );
+
+            // 4. Save review
+            await prisma.codeReview.update({
+                where: {
+                    id: reviewId
+                },
+                data: {
+                    status: "COMPLETED",
+                    result: review
+                }
+            });
+
+            console.log(
+                `Review ${reviewId} completed`
+            );
+
+            return {
+                success: true,
+                reviewId
+            };
+
+        } catch (error) {
+            console.error(`Review ${reviewId} failed`, error);
+
+            await prisma.codeReview.update({
+                where: {
+                    id: reviewId
+                },
+                data: {
+                    status: "FAILED",
+                    error: error.message
+                }
+            });
+
+            throw error;
+        }
     }
 
     // Return value is stored in job.returnvalue

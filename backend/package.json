@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
@@ -14,8 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^3.0.1",
-    "@actions/github": "^9.1.1",
     "@langchain/core": "^1.2.10",
     "@langchain/openai": "^1.5.12",
     "@prisma/adapter-pg": "^7.9.1",
@@ -31,6 +30,7 @@
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "langchain": "^1.5.11",
+    "octokit": "^5.0.5",
     "pg": "^8.23.0",
     "zod": "^4.4.3"
   },

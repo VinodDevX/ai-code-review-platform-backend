@@ -29,6 +29,53 @@ const LINE_SPAN = 20;
  // Maximum number of entries in the file cache
 const MAX_CACHE_ENTRIES = 1000;
 
+const IGNORED_DIRECTORIES = [
+    "node_modules/",
+    ".git/",
+    "dist/",
+    "build/",
+    "coverage/",
+    "vendor/",
+    "target/"
+];
+
+const IGNORED_FILES = [
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml"
+];
+
+const ALLOWED_EXTENSIONS = [
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".mjs",
+    ".cjs",
+    ".py",
+    ".java",
+    ".go",
+    ".rs",
+    ".cpp",
+    ".c",
+    ".h",
+    ".hpp",
+    ".cs",
+    ".php",
+    ".rb",
+    ".swift",
+    ".kt",
+    ".kts",
+    ".sql",
+    ".html",
+    ".css",
+    ".scss",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".md"
+];
+
 module.exports = {
     LLM_PROCESSING,
     AUTH_PROVIDERS,
@@ -39,5 +86,8 @@ module.exports = {
     MAX_REVIEW_ITERATIONS,
     MAX_FILE_SIZE_BYTES,
     LINE_SPAN,
-    MAX_CACHE_ENTRIES
+    MAX_CACHE_ENTRIES,
+    IGNORED_DIRECTORIES,
+    IGNORED_FILES,
+    ALLOWED_EXTENSIONS
 }
