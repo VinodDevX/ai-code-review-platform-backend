@@ -60,7 +60,7 @@ const githubCallback = async (req, res, next) => {
         })
 
         return res.redirect(
-            `${frontendUrl}/github/success`
+            `${frontendUrl}/dashboard?from=github`
         );
 
     } catch (error) {
