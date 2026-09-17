@@ -11,3 +11,6 @@ docker compose up --build
 
 # Run migrations
 docker compose exec app npx prisma migrate deploy
+
+# Run seeds
+docker compose exec app npx prisma db seed
