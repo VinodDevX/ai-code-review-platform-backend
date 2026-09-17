@@ -18,7 +18,7 @@ async function main() {
         create: {
             email: "vinod@thoughtwin.com",
             name: "Alice",
-            passwordHash: hashPassword("test@123"),
+            passwordHash: await hashPassword("test@123"),
             isEmailVerified: true,
             isActive: true
         },
