@@ -80,7 +80,7 @@ const linkGithubWithUser = async (data) => {
         {
             oauthAccounts: {
                 some: {
-                    provider: "GITHUB",
+                    provider: AUTH_PROVIDERS['GITHUB'],
                     providerAccountId: data.githubId,
                 },
             },
@@ -121,7 +121,7 @@ const linkGithubWithUser = async (data) => {
             where: {
                 provider_providerAccountId: {
                     provider: "GITHUB",
-                    providerAccountId: 327384157,
+                    providerAccountId: data.githubId,
                 },
             }
         })
