@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const env = require("../config/env");
+const crypto = require('crypto')
 
 const generateAccessToken = (userId) => {
   return jwt.sign(
@@ -45,10 +46,23 @@ const verifyRefreshToken = (token) => {
   return jwt.verify(token, env.jwtRefreshSecret);
 };
 
+function generateOAuthLoginCode() {
+    return crypto.randomBytes(32).toString("hex");
+}
+
+function hashOAuthLoginCode(code) {
+    return crypto
+        .createHash("sha256")
+        .update(code)
+        .digest("hex");
+}
+
 module.exports = {
   generateAccessToken,
   encryptAccessToken,
   generateRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
+  generateOAuthLoginCode,
+  hashOAuthLoginCode
 };

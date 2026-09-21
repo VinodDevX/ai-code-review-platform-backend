@@ -5,6 +5,7 @@ const authRoutes = require("./modules/auth/auth.routes");
 const githubRoutes = require("./modules/github/github.routes");
 const errorHandler = require("./middleware/errorHandler");
 const session = require('express-session');
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(
   })
 );
 
+app.use(cookieParser())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

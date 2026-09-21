@@ -3,7 +3,9 @@ const prisma = require("../../config/database");
 const { githubClientID, githubCallbackUrl, githubClientSecret, openAIKey } = require("../../config/env");
 const { STATUS_ENUM, AUTH_PROVIDERS, IGNORED_DIRECTORIES, IGNORED_FILES, ALLOWED_EXTENSIONS } = require("./github.constants");
 const { Octokit } = require("octokit");
-const { OpenAI } = require("@langchain/openai")
+const { OpenAI } = require("@langchain/openai");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/jwt");
+const { hashToken } = require("../../utils/token");
 
 const llm = new OpenAI({
     model: "gpt-5.6-sol",
@@ -81,7 +83,7 @@ const linkGithubWithUser = async (data) => {
             oauthAccounts: {
                 some: {
                     provider: AUTH_PROVIDERS['GITHUB'],
-                    providerAccountId: data.githubId,
+                    providerAccountId: String(data.githubId)
                 },
             },
         }
@@ -105,7 +107,7 @@ const linkGithubWithUser = async (data) => {
             create: {
                 userId: existingUser.id,
                 provider: AUTH_PROVIDERS['GITHUB'],
-                providerAccountId: data.githubId,
+                providerAccountId: String(data.githubId),
                 accessToken: data.githubAccessToken,
                 refreshToken: data.refresh_token,
                 tokenType: data.token_type,
@@ -113,7 +115,7 @@ const linkGithubWithUser = async (data) => {
             update: {
                 userId: existingUser.id,
                 provider: AUTH_PROVIDERS['GITHUB'],
-                providerAccountId: data.githubId,
+                providerAccountId: String(data.githubId),
                 accessToken: data.githubAccessToken,
                 refreshToken: data.refresh_token,
                 tokenType: data.token_type,
@@ -121,11 +123,11 @@ const linkGithubWithUser = async (data) => {
             where: {
                 provider_providerAccountId: {
                     provider: "GITHUB",
-                    providerAccountId: data.githubId,
+                    providerAccountId: String(data.githubId),
                 },
             }
         })
-        return await prisma.user.update(
+        const user = await prisma.user.update(
             {
                 where: {
                     id: existingUser.id
@@ -135,9 +137,32 @@ const linkGithubWithUser = async (data) => {
                     name: existingUser.name || data.name,
                     email: existingUser.email || data.email,
                     isEmailVerified: true,
+                    lastLoginAt: new Date(),
                 }
             }
         );
+
+        const accessToken = generateAccessToken(user.id);
+        const refreshToken = generateRefreshToken(user.id);
+
+        await prisma.refreshToken.create({
+            data: {
+                userId: user.id,
+                tokenHash: hashToken(refreshToken),
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            },
+        });
+        return {
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                isEmailVerified: user.isEmailVerified,
+            },
+            accessToken,
+            refreshToken,
+        };
+
     } else {
         const user = await prisma.user.create(
             {
@@ -153,12 +178,18 @@ const linkGithubWithUser = async (data) => {
             data: {
                 userId: user.id,
                 provider: AUTH_PROVIDERS['GITHUB'],
-                providerAccountId: data.githubId,
+                providerAccountId: String(data.githubId),
                 accessToken: data.githubAccessToken,
                 refreshToken: data.refresh_token,
                 tokenType: data.token_type,
             }
         })
+
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+        };
     }
 }
 
