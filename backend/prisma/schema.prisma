@@ -129,7 +129,7 @@ model Repository {
 
 model CodeReview {
   id           String @id @default(uuid())
-  githubRepoId String
+  githubRepoId String?
 
   findings String
   status   CodeReviewStatus
