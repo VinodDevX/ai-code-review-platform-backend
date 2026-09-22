@@ -59,8 +59,12 @@ const saveReposToDB = async () => {
 const getGithubUser = async (accessToken) => {
     const octokit = createGithubClient(accessToken);
     const response = await octokit.rest.users.getAuthenticated();
+    const { data: emails } = await octokit.rest.users.listEmailsForAuthenticatedUser();
 
-    return response.data;
+    const primaryEmail = emails.find(email => email.primary)?.email ||
+        emails.find(email => email.verified)?.email || null;
+
+    return {...response.data, email: primaryEmail};
 };
 
 const getGithubRepos = async (accessToken, page = 1, perPage = 30) => {

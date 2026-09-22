@@ -75,7 +75,7 @@ const githubCallback = async (req, res, next) => {
         }
 
         return res.redirect(
-            `${frontendUrl}/dashboard?from=github&code=${loginCode}&userId=${userId}`
+            `${frontendUrl}/github/callback?from=github&code=${loginCode}&userId=${userId}`
         );
 
     } catch (error) {
