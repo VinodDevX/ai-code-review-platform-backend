@@ -109,8 +109,8 @@ const getCurrentUser = async (userId) => {
       isActive: true,
       createdAt: true,
       updatedAt: true,
+      oauthAccounts: true,
     },
-    include: { oauthAccounts: true }
   });
 
   const githubAccount = user.oauthAccounts.find(a => a.provider === AUTH_PROVIDERS['GITHUB'])

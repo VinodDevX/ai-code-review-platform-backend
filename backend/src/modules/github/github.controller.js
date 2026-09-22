@@ -3,7 +3,7 @@ const { getCurrentUser } = require("../auth/auth.service");
 const { getGithubRepos, linkGithubWithUser, getAccessTokenFromCode, getGithubUser, startCodeReview } = require("./github.service");
 const { REVIEW_CODE } = require('./github.constants');
 const { queue } = require('../../utils/worker');
-const { encryptAccessToken, hashOAuthLoginCode, generateOAuthLoginCode, generateAccessToken } = require("../../utils/jwt");
+const { encryptAccessToken, hashOAuthLoginCode, generateOAuthLoginCode, generateAccessToken, generateRefreshToken } = require("../../utils/jwt");
 const redisConnection = require("../../utils/redis");
 
 const githubCallback = async (req, res, next) => {
@@ -75,7 +75,7 @@ const githubCallback = async (req, res, next) => {
         }
 
         return res.redirect(
-            `${frontendUrl}/dashboard?from=github&code=${loginCode}`
+            `${frontendUrl}/dashboard?from=github&code=${loginCode}&userId=${userId}`
         );
 
     } catch (error) {
@@ -86,7 +86,7 @@ const githubCallback = async (req, res, next) => {
     }
 };
 
-const exhangeLoginCodeWithToken = async () => {
+const exhangeLoginCodeWithToken = async (req, res) => {
     try {
         const { code, userId } = req.body;
 
