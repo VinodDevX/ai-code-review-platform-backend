@@ -109,7 +109,7 @@ const getCurrentUser = async (userId) => {
       isActive: true,
       createdAt: true,
       updatedAt: true,
-    },
+      oauthAccounts: true,
     include: { oauthAccounts: true }
   });
 
